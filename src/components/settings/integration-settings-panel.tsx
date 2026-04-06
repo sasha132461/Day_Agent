@@ -116,6 +116,7 @@ export function IntegrationSettingsPanel({
   const [gmailPass, setGmailPass] = useState("");
   const [tgPhone, setTgPhone] = useState("");
   const [tgCode, setTgCode] = useState("");
+  const [tgCloudPassword, setTgCloudPassword] = useState("");
   const [tgChats, setTgChats] = useState("");
   const [gmailAi, setGmailAi] = useState<SourceAIPrompts>(emptyPrompts);
   const [telegramAi, setTelegramAi] = useState<SourceAIPrompts>(emptyPrompts);
@@ -126,17 +127,25 @@ export function IntegrationSettingsPanel({
     enabled: isAuthenticated === true,
   });
 
-  const { data: promptsRemote, isLoading: promptsLoading } = useQuery({
+  const { data: promptsRemote, isLoading: promptsLoading, isError: promptsError } = useQuery({
     queryKey: ["integrations", "ai-prompts"],
     queryFn: integrations.getAiPrompts,
     enabled: isAuthenticated === true,
+    retry: false,
   });
 
   useEffect(() => {
-    if (promptsRemote) {
-      setGmailAi({ ...emptyPrompts(), ...promptsRemote.gmail });
-      setTelegramAi({ ...emptyPrompts(), ...promptsRemote.telegram });
-    }
+    if (!promptsRemote) return;
+    const g = promptsRemote.gmail;
+    const t = promptsRemote.telegram;
+    setGmailAi({
+      ...emptyPrompts(),
+      ...(g && typeof g === "object" ? g : {}),
+    });
+    setTelegramAi({
+      ...emptyPrompts(),
+      ...(t && typeof t === "object" ? t : {}),
+    });
   }, [promptsRemote]);
 
   const connectGmail = useMutation({
@@ -164,6 +173,7 @@ export function IntegrationSettingsPanel({
     mutationFn: () => integrations.telegramSendCode(tgPhone.trim()),
     onSuccess: (r) => {
       toast.success(r.message || "Код надіслано");
+      setTgCloudPassword("");
       queryClient.invalidateQueries({ queryKey: ["integrations", "status"] });
     },
     onError: (e: unknown) => {
@@ -173,10 +183,11 @@ export function IntegrationSettingsPanel({
   });
 
   const verifyTg = useMutation({
-    mutationFn: () => integrations.telegramVerify(tgCode.trim()),
+    mutationFn: () => integrations.telegramVerify(tgCode.trim(), tgCloudPassword),
     onSuccess: (r) => {
       toast.success(r.message || "Telegram підключено");
       setTgCode("");
+      setTgCloudPassword("");
       queryClient.invalidateQueries({ queryKey: ["integrations", "status"] });
     },
     onError: (e: unknown) => {
@@ -228,6 +239,13 @@ export function IntegrationSettingsPanel({
 
   return (
     <div className={cn("flex flex-col gap-6", className)}>
+      {promptsError && (
+        <p className="rounded-md border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-xs text-amber-950 dark:text-amber-100">
+          Не вдалося завантажити збережені промпти (перевірте бекенд і наявність{" "}
+          <code className="rounded bg-muted px-1">GET /api/integrations/ai-prompts</code>). Можна
+          заповнити поля вручну й зберегти.
+        </p>
+      )}
       {!embedded && (
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Підключення та ШІ</h1>
@@ -256,18 +274,55 @@ export function IntegrationSettingsPanel({
             <Mail className="size-5" />
             Gmail
           </CardTitle>
-          <CardDescription>
-            Потрібен{" "}
-            <a
-              href="https://support.google.com/accounts/answer/185833"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-0.5 text-primary underline"
-            >
-              пароль додатку
-              <ExternalLink className="size-3" />
-            </a>{" "}
-            Google (не звичайний пароль від акаунта).
+          <CardDescription className="flex flex-col gap-2">
+            <span>
+              Потрібен{" "}
+              <a
+                href="https://myaccount.google.com/apppasswords"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-0.5 text-primary underline"
+              >
+                пароль додатку
+                <ExternalLink className="size-3" />
+              </a>{" "}
+              Google (не звичайний пароль від акаунта). Коли Google запитає назву додатка, можна ввести, наприклад,{" "}
+              <strong className="font-medium text-foreground">Daily Planner</strong> — це лише підпис для вас у
+              списку паролів.
+            </span>
+            <span className="text-xs leading-relaxed text-muted-foreground">
+              Підказка: має бути увімкнена{" "}
+              <a
+                href="https://myaccount.google.com/signinoptions/two-step-verification"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-0.5 text-primary underline"
+              >
+                двофакторна перевірка (2FA)
+                <ExternalLink className="size-3" />
+              </a>
+              . Якщо з’являється «налаштування недоступне» навіть для особистого @gmail.com: переконайтесь, що на{" "}
+              <a
+                href="https://myaccount.google.com/apppasswords"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-primary underline"
+              >
+                сторінці паролів додатків
+              </a>{" "}
+              у правому верхньому куті обрано саме той акаунт; вимкніть{" "}
+              <a
+                href="https://myaccount.google.com/security"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-primary underline"
+              >
+                Розширений захист Google
+              </a>
+              , якщо він увімкнений; облікові записи під наглядом (наприклад, Family Link) часто не отримують паролі
+              додатків. Також буває з Workspace / шкільною поштою — тоді лише адмін або інший акаунт. Наш бекенд
+              очікує IMAP з паролем додатку.
+            </span>
           </CardDescription>
         </CardHeader>
         <CardContent className="flex flex-col gap-4">
@@ -338,19 +393,27 @@ export function IntegrationSettingsPanel({
             <MessageCircle className="size-5" />
             Telegram
           </CardTitle>
-          <CardDescription>
-            Номер у форматі міжнародного (+380…). На сервері мають бути вказані{" "}
-            <code className="rounded bg-muted px-1">TELEGRAM_API_ID</code> та{" "}
-            <code className="rounded bg-muted px-1">TELEGRAM_API_HASH</code> (з{" "}
-            <a
-              href="https://my.telegram.org"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-primary underline"
-            >
-              my.telegram.org
-            </a>
-            ).
+          <CardDescription className="flex flex-col gap-2">
+            <span>
+              Номер у форматі міжнародного (+380…). На сервері мають бути вказані{" "}
+              <code className="rounded bg-muted px-1">TELEGRAM_API_ID</code> та{" "}
+              <code className="rounded bg-muted px-1">TELEGRAM_API_HASH</code> (з{" "}
+              <a
+                href="https://my.telegram.org"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-primary underline"
+              >
+                my.telegram.org
+              </a>
+              ).
+            </span>
+            <span className="text-xs leading-relaxed text-muted-foreground">
+              Після «Надіслати код» введіть лише <strong className="font-medium text-foreground">цифри</strong> з
+              повідомлення Telegram. Якщо у вас увімкнена{" "}
+              <strong className="font-medium text-foreground">двоетапна перевірка</strong> (окремий пароль облікового
+              запису в Telegram), введіть його в полі «Пароль 2FA» і натисніть «Підтвердити» (код і пароль разом).
+            </span>
           </CardDescription>
         </CardHeader>
         <CardContent className="flex flex-col gap-4">
@@ -368,7 +431,7 @@ export function IntegrationSettingsPanel({
                 )}
               </p>
               {status?.telegram_code_sent && (
-                <p className="text-sm text-amber-600">Очікується код з Telegram (дійний ~10 хв).</p>
+                <p className="text-sm text-amber-600">Очікується код з Telegram (дійний близько 15 хв).</p>
               )}
             </>
           )}
@@ -397,10 +460,29 @@ export function IntegrationSettingsPanel({
             <Input
               id="tg-code"
               inputMode="numeric"
+              autoComplete="one-time-code"
               value={tgCode}
               onChange={(e) => setTgCode(e.target.value)}
-              placeholder="12345"
+              placeholder="лише цифри, напр. 12345"
             />
+            <p className="text-xs text-muted-foreground">
+              Пробіли та дефіси можна не прибирати — вони будуть відкинуті при відправці.
+            </p>
+          </div>
+          <div className="flex flex-col gap-2">
+            <Label htmlFor="tg-2fa">Пароль 2FA Telegram (якщо увімкнено в застосунку)</Label>
+            <Input
+              id="tg-2fa"
+              type="password"
+              autoComplete="current-password"
+              value={tgCloudPassword}
+              onChange={(e) => setTgCloudPassword(e.target.value)}
+              placeholder="залиште порожнім, якщо без двоетапної перевірки"
+            />
+            <p className="text-xs text-muted-foreground">
+              Це не код з SMS/чату, а пароль, який ви задали в Telegram → Налаштування → Конфіденційність → Двоетапна
+              перевірка.
+            </p>
           </div>
           <div className="flex flex-wrap gap-2">
             <Button

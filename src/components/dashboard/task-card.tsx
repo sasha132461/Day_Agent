@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
@@ -167,19 +168,21 @@ export function TaskCard({ task, onEdit }: TaskCardProps) {
                 Редагувати
               </DropdownMenuItem>
             )}
-            <DropdownMenuLabel>Пріоритет</DropdownMenuLabel>
-            <DropdownMenuItem onClick={() => setPriority("high")}>
-              <ArrowUp className="size-4 text-red-500" />
-              Високий
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => setPriority("medium")}>
-              <ArrowRight className="size-4 text-yellow-500" />
-              Середній
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => setPriority("low")}>
-              <ArrowDown className="size-4 text-green-500" />
-              Низький
-            </DropdownMenuItem>
+            <DropdownMenuGroup>
+              <DropdownMenuLabel>Пріоритет</DropdownMenuLabel>
+              <DropdownMenuItem onClick={() => setPriority("high")}>
+                <ArrowUp className="size-4 text-red-500" />
+                Високий
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setPriority("medium")}>
+                <ArrowRight className="size-4 text-yellow-500" />
+                Середній
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setPriority("low")}>
+                <ArrowDown className="size-4 text-green-500" />
+                Низький
+              </DropdownMenuItem>
+            </DropdownMenuGroup>
             <DropdownMenuSeparator />
             <DropdownMenuItem
               variant="destructive"

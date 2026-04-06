@@ -11,6 +11,7 @@ import { UserSettingsDialog } from "@/components/settings/user-settings-dialog";
 import {
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
@@ -74,38 +75,39 @@ export function Header() {
               )}
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuLabel>Синхронізація</DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={() => {
-                toast.loading("Синхронізація...", { id: "sync" });
-                syncAll.mutate(undefined, {
-                  onSuccess: () => toast.success("Синхронізовано!", { id: "sync" }),
-                  onError: () => toast.error("Помилка синхронізації", { id: "sync" }),
-                });
-              }}>
-                <RefreshCw className="size-4" />
-                Синхронізувати все
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => {
-                toast.loading("Gmail...", { id: "sync" });
-                syncGmail.mutate(undefined, {
-                  onSuccess: () => toast.success("Gmail синхронізовано!", { id: "sync" }),
-                  onError: () => toast.error("Помилка Gmail", { id: "sync" }),
-                });
-              }}>
-                <Mail className="size-4" />
-                Синхронізувати Gmail
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => {
-                toast.loading("Telegram...", { id: "sync" });
-                syncTelegram.mutate(undefined, {
-                  onSuccess: () => toast.success("Telegram синхронізовано!", { id: "sync" }),
-                  onError: () => toast.error("Помилка Telegram", { id: "sync" }),
-                });
-              }}>
-                <MessageCircle className="size-4" />
-                Синхронізувати Telegram
-              </DropdownMenuItem>
+              <DropdownMenuGroup>
+                <DropdownMenuLabel>Синхронізація</DropdownMenuLabel>
+                <DropdownMenuItem onClick={() => {
+                  toast.loading("Синхронізація...", { id: "sync" });
+                  syncAll.mutate(undefined, {
+                    onSuccess: () => toast.success("Синхронізовано!", { id: "sync" }),
+                    onError: () => toast.error("Помилка синхронізації", { id: "sync" }),
+                  });
+                }}>
+                  <RefreshCw className="size-4" />
+                  Синхронізувати все
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => {
+                  toast.loading("Gmail...", { id: "sync" });
+                  syncGmail.mutate(undefined, {
+                    onSuccess: () => toast.success("Gmail синхронізовано!", { id: "sync" }),
+                    onError: () => toast.error("Помилка Gmail", { id: "sync" }),
+                  });
+                }}>
+                  <Mail className="size-4" />
+                  Синхронізувати Gmail
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => {
+                  toast.loading("Telegram...", { id: "sync" });
+                  syncTelegram.mutate(undefined, {
+                    onSuccess: () => toast.success("Telegram синхронізовано!", { id: "sync" }),
+                    onError: () => toast.error("Помилка Telegram", { id: "sync" }),
+                  });
+                }}>
+                  <MessageCircle className="size-4" />
+                  Синхронізувати Telegram
+                </DropdownMenuItem>
+              </DropdownMenuGroup>
             </DropdownMenuContent>
           </DropdownMenu>
 
@@ -134,31 +136,43 @@ export function Header() {
               </Avatar>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuLabel>
-                <div className="flex flex-col">
-                  <span className="text-sm font-medium">
-                    {user?.name || "Користувач"}
-                  </span>
-                  <span className="text-xs text-muted-foreground">
-                    {user?.email}
-                  </span>
-                </div>
-              </DropdownMenuLabel>
+              <DropdownMenuGroup>
+                <DropdownMenuLabel>
+                  <div className="flex flex-col">
+                    <span className="text-sm font-medium">
+                      {user?.name || "Користувач"}
+                    </span>
+                    <span className="text-xs text-muted-foreground">
+                      {user?.email}
+                    </span>
+                  </div>
+                </DropdownMenuLabel>
+              </DropdownMenuGroup>
               <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={() => setSettingsOpen(true)}>
-                <Settings className="size-4" />
-                Налаштування
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={logout}>
-                <LogOut className="size-4" />
-                Вийти
-              </DropdownMenuItem>
+              <DropdownMenuGroup>
+                <DropdownMenuItem
+                  onClick={() => {
+                    window.setTimeout(() => setSettingsOpen(true), 0);
+                  }}
+                >
+                  <Settings className="size-4" />
+                  Налаштування
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={logout}>
+                  <LogOut className="size-4" />
+                  Вийти
+                </DropdownMenuItem>
+              </DropdownMenuGroup>
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
       </div>
-      <UserSettingsDialog open={settingsOpen} onOpenChange={setSettingsOpen} />
+      <UserSettingsDialog
+        open={settingsOpen}
+        onOpenChange={(next) => {
+          if (typeof next === "boolean") setSettingsOpen(next);
+        }}
+      />
     </header>
   );
 }

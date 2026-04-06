@@ -195,8 +195,14 @@ export const integrations = {
     return data;
   },
 
-  telegramVerify: async (code: string): Promise<{ ok: boolean; message?: string }> => {
-    const { data } = await api.post("/api/integrations/telegram/verify", { code });
+  telegramVerify: async (
+    code: string,
+    cloudPassword?: string | null,
+  ): Promise<{ ok: boolean; message?: string }> => {
+    const payload: { code: string; cloud_password?: string } = { code: code.trim() };
+    const p = cloudPassword?.trim();
+    if (p) payload.cloud_password = p;
+    const { data } = await api.post("/api/integrations/telegram/verify", payload);
     return data;
   },
 
@@ -212,8 +218,31 @@ export const integrations = {
   },
 
   getAiPrompts: async (): Promise<AIPromptsPayload> => {
-    const { data } = await api.get<AIPromptsPayload>("/api/integrations/ai-prompts");
-    return data;
+    const { data } = await api.get<unknown>("/api/integrations/ai-prompts");
+    const empty = {
+      general: "",
+      priority_low: "",
+      priority_medium: "",
+      priority_high: "",
+    };
+    if (!data || typeof data !== "object") {
+      return { gmail: { ...empty }, telegram: { ...empty } };
+    }
+    const d = data as Record<string, unknown>;
+    const pick = (src: unknown) => {
+      if (!src || typeof src !== "object") return { ...empty };
+      const o = src as Record<string, unknown>;
+      return {
+        general: typeof o.general === "string" ? o.general : "",
+        priority_low: typeof o.priority_low === "string" ? o.priority_low : "",
+        priority_medium: typeof o.priority_medium === "string" ? o.priority_medium : "",
+        priority_high: typeof o.priority_high === "string" ? o.priority_high : "",
+      };
+    };
+    return {
+      gmail: pick(d.gmail),
+      telegram: pick(d.telegram),
+    };
   },
 
   putAiPrompts: async (body: AIPromptsPayload): Promise<AIPromptsPayload> => {
