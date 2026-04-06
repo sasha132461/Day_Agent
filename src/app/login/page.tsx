@@ -42,10 +42,11 @@ export default function LoginPage() {
       if (isSignUp) {
         await register(email, password, name || undefined);
         await login(email, password);
+        router.push("/integrations?new=1");
       } else {
         await login(email, password);
+        router.push("/dashboard");
       }
-      router.push("/dashboard");
     } catch (err: unknown) {
       const message =
         (err as { response?: { data?: { detail?: string } } })?.response?.data

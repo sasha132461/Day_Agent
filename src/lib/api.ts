@@ -1,4 +1,5 @@
 import axios from "axios";
+import type { IntegrationStatus } from "@/types/integrations";
 import type {
   AuthResponse,
   DailyBriefing,
@@ -164,6 +165,48 @@ export const sync = {
 
   syncAll: async () => {
     const { data } = await api.post("/api/sync/all");
+    return data;
+  },
+};
+
+export const integrations = {
+  getStatus: async (): Promise<IntegrationStatus> => {
+    const { data } = await api.get<IntegrationStatus>("/api/integrations/status");
+    return data;
+  },
+
+  connectGmail: async (email: string, appPassword: string): Promise<{ ok: boolean; message?: string }> => {
+    const { data } = await api.put("/api/integrations/gmail", {
+      email,
+      app_password: appPassword,
+    });
+    return data;
+  },
+
+  disconnectGmail: async (): Promise<void> => {
+    await api.delete("/api/integrations/gmail");
+  },
+
+  telegramSendCode: async (phoneNumber: string): Promise<{ ok: boolean; message?: string }> => {
+    const { data } = await api.post("/api/integrations/telegram/send-code", {
+      phone_number: phoneNumber,
+    });
+    return data;
+  },
+
+  telegramVerify: async (code: string): Promise<{ ok: boolean; message?: string }> => {
+    const { data } = await api.post("/api/integrations/telegram/verify", { code });
+    return data;
+  },
+
+  disconnectTelegram: async (): Promise<void> => {
+    await api.delete("/api/integrations/telegram");
+  },
+
+  setTelegramChats: async (chatIds: string | null): Promise<{ ok: boolean; telegram_chat_ids: string | null }> => {
+    const { data } = await api.put("/api/integrations/telegram/chats", {
+      chat_ids: chatIds,
+    });
     return data;
   },
 };

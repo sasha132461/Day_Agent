@@ -14,8 +14,10 @@ import {
   DropdownMenuTrigger,
   DropdownMenuLabel,
 } from "@/components/ui/dropdown-menu";
+import { useRouter } from "next/navigation";
 import {
   CalendarDays,
+  Link2,
   Loader2,
   LogOut,
   Mail,
@@ -26,6 +28,7 @@ import {
 } from "lucide-react";
 
 export function Header() {
+  const router = useRouter();
   const { user, logout } = useAuth();
   const { theme, setTheme } = useTheme();
   const syncAll = useSyncAll();
@@ -140,6 +143,11 @@ export function Header() {
                   </span>
                 </div>
               </DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={() => router.push("/integrations")}>
+                <Link2 className="size-4" />
+                Gmail і Telegram
+              </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={logout}>
                 <LogOut className="size-4" />
