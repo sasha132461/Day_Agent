@@ -1,11 +1,13 @@
 "use client";
 
+import { useState } from "react";
 import { useTheme } from "next-themes";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/use-auth";
 import { useSyncAll, useSyncGmail, useSyncTelegram } from "@/hooks/use-tasks";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { UserSettingsDialog } from "@/components/settings/user-settings-dialog";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -14,21 +16,20 @@ import {
   DropdownMenuTrigger,
   DropdownMenuLabel,
 } from "@/components/ui/dropdown-menu";
-import { useRouter } from "next/navigation";
 import {
   CalendarDays,
-  Link2,
   Loader2,
   LogOut,
   Mail,
   MessageCircle,
   Moon,
   RefreshCw,
+  Settings,
   Sun,
 } from "lucide-react";
 
 export function Header() {
-  const router = useRouter();
+  const [settingsOpen, setSettingsOpen] = useState(false);
   const { user, logout } = useAuth();
   const { theme, setTheme } = useTheme();
   const syncAll = useSyncAll();
@@ -144,9 +145,9 @@ export function Header() {
                 </div>
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={() => router.push("/integrations")}>
-                <Link2 className="size-4" />
-                Gmail і Telegram
+              <DropdownMenuItem onClick={() => setSettingsOpen(true)}>
+                <Settings className="size-4" />
+                Налаштування
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={logout}>
@@ -157,6 +158,7 @@ export function Header() {
           </DropdownMenu>
         </div>
       </div>
+      <UserSettingsDialog open={settingsOpen} onOpenChange={setSettingsOpen} />
     </header>
   );
 }

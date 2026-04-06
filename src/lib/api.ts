@@ -1,4 +1,5 @@
 import axios from "axios";
+import type { AIPromptsPayload } from "@/types/ai-prompts";
 import type { IntegrationStatus } from "@/types/integrations";
 import type {
   AuthResponse,
@@ -207,6 +208,16 @@ export const integrations = {
     const { data } = await api.put("/api/integrations/telegram/chats", {
       chat_ids: chatIds,
     });
+    return data;
+  },
+
+  getAiPrompts: async (): Promise<AIPromptsPayload> => {
+    const { data } = await api.get<AIPromptsPayload>("/api/integrations/ai-prompts");
+    return data;
+  },
+
+  putAiPrompts: async (body: AIPromptsPayload): Promise<AIPromptsPayload> => {
+    const { data } = await api.put<AIPromptsPayload>("/api/integrations/ai-prompts", body);
     return data;
   },
 };
